@@ -2,12 +2,13 @@ import socket
 import threading
 import time
 import json
+import re
 
 # from macpath import join
 
 # configuration
 INTRODUCER_HOST = socket.gethostbyname('academic-login08.rc.fas.harvard.edu')
-MACHINE_NUM = int(socket.gethostname()[13:15])
+MACHINE_NUM = int(re.search(r'0*([1-9])', socket.gethostname()).group(1))
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241

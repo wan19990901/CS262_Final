@@ -6,11 +6,11 @@ import os
 import time
 import struct
 import json
-
+import re
 
 BUFFER_SIZE = 4096
 MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('academic-login08.rc.fas.harvard.edu')
-MACHINE_NUM = int(socket.gethostname()[13:15])
+MACHINE_NUM = int(re.search(r'0*([1-9])', socket.gethostname()).group(1))
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
