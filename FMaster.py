@@ -7,7 +7,7 @@ import time
 MASTER_PORT = 20086
 FILE_PORT = 10086
 GET_ADDR_PORT = 10087
-Master_ip = 'localhost'
+
 
 
 class FMaster:
@@ -17,7 +17,7 @@ class FMaster:
         self.node_to_file = {}
         self.ftn_lock = threading.Lock()
         self.file_to_node = {}
-        self.host = socket.gethostbyname(Master_ip)
+        self.host = socket.gethostbyname(socket.gethostname())
         self.file_port = file_port
 
     def repair(self, ip):

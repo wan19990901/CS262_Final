@@ -9,8 +9,8 @@ import json
 
 
 BUFFER_SIZE = 4096
-MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('localhost')
-MACHINE_NUM = 99
+MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('fa22-cs425-8601.cs.illinois.edu')
+MACHINE_NUM = int(socket.gethostname()[13:15])
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241

@@ -6,9 +6,8 @@ import json
 # from macpath import join
 
 # configuration
-hostname = '10.250.36.218'
-INTRODUCER_HOST = socket.gethostbyname(hostname)
-MACHINE_NUM = 99 # int(socket.gethostname()[13:15])
+INTRODUCER_HOST = socket.gethostbyname('fa22-cs425-8601.cs.illinois.edu')
+MACHINE_NUM = int(socket.gethostname()[13:15])
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
@@ -41,7 +40,7 @@ class Node:
 
         self.log_filepath = log_filepath
         # addresses
-        self.host = socket.gethostbyname(hostname)
+        self.host = socket.gethostbyname(socket.gethostname())
 
         self.ping_port = ping_port
         self.membership_port = membership_port
@@ -100,8 +99,6 @@ class Node:
         :return: None
         """
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            print(self.host)
-            print(self.membership_port)
             s.bind((self.host, self.membership_port))
             while True:
                 encoded_command, addr = s.recvfrom(4096)
