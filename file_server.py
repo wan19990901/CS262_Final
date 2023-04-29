@@ -7,10 +7,11 @@ import time
 import struct
 import json
 import sys
+import random
 
 BUFFER_SIZE = 4096
 MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('10.250.36.218')
-MACHINE_NUM = 99
+MACHINE_NUM = int(sys.argv[1][-1].split('.')[-1])
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
@@ -291,12 +292,15 @@ class FServer(server.Node):
             s.send(b'put')
             s.recv(1) # for ack
             send_file(s, localfilepath, sdfsfileid, timestamp)
+            # Add a debug print or log statement here to confirm that the 'put' request was received
+            print(f"Put request received at replica node {ip} for file {sdfsfileid}")
             s.recv(1) # for ack
             command_id = sdfsfileid + '-' + str(timestamp)
 
             self.put_lock.acquire()
             self.put_ack_cache.setdefault(command_id, 0)
             self.put_ack_cache[command_id] += 1
+            print(self.put_ack_cache[command_id])
             self.put_lock.release()
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -307,6 +311,8 @@ class FServer(server.Node):
         conn.send(b'1')
         data, sdfsfileid, timestamp = receive_file(conn)
         self.file_table.insert_file(data, sdfsfileid, timestamp)
+        # Add a debug print or log statement here to confirm that the acknowledgment is being sent
+        print(f"Sending acknowledgment for put request of file {sdfsfileid}")
         conn.send(b'1')
 
     def handle_get(self, sdfsfileid, ip):
@@ -458,7 +464,9 @@ class FServer(server.Node):
                     self.put_ack_cache.setdefault(command_id, 0)
                     cnt = self.put_ack_cache[command_id]
                     self.put_lock.release()
-                    if cnt >= 3:
+                    if cnt > 0:
+                        print(f"Received {cnt} acknowledgment(s) for file {sdfsfileid}")
+                    if cnt > 1:
                         break
                     time.sleep(2)
                     i += 1
@@ -477,7 +485,7 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(sdfsfileid, 0)
                     cnt = self.get_ack_cache[sdfsfileid]
                     self.get_lock.release()
-                    if cnt >= 3:
+                    if cnt > 1:
                         break
                     time.sleep(2)
                     i += 1
@@ -516,7 +524,7 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(k, 0)
                     cnt = self.get_ack_cache[k]
                     self.get_lock.release()
-                    if cnt >= 3:
+                    if cnt > 1:
                         break
                     time.sleep(2)
                     i += 1

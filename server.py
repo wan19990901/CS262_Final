@@ -8,8 +8,6 @@ import sys
 # configuration
 hostname = '10.250.36.218'
 INTRODUCER_HOST = socket.gethostbyname(hostname)
-MACHINE_NUM = 99 # int(socket.gethostname()[13:15])
-LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
 PING_INTERVAL = 2.5
@@ -398,12 +396,13 @@ class Node:
         """
         self.log_lock.acquire()
         t = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        with open(LOG_FILEPATH, 'a') as f:
+        with open(self.log_filepath, 'a') as f:
             f.write(f'node ID: {node_id}, change type:{action}, log time: {t}, alive machine: {len(membership_list)} \n')
             f.close()
         self.log_lock.release()
 
 if __name__ == '__main__':
-    
+    MACHINE_NUM = int(sys.argv[1][-1].split('.')[-1])
+    LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
     server = Node(PING_PORT, MEMBERSHIP_PORT, PING_TIMEOUT, PING_INTERVAL, LOG_FILEPATH)
     server.run()
