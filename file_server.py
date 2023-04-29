@@ -466,7 +466,7 @@ class FServer(server.Node):
                     self.put_lock.release()
                     if cnt > 0:
                         print(f"Received {cnt} acknowledgment(s) for file {sdfsfileid}")
-                    if cnt >= 1:
+                    if cnt >= 2:
                         break
                     time.sleep(2)
                     i += 1
