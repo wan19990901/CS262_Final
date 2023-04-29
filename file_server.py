@@ -466,7 +466,7 @@ class FServer(server.Node):
                     self.put_lock.release()
                     if cnt > 0:
                         print(f"Received {cnt} acknowledgment(s) for file {sdfsfileid}")
-                    if cnt > 1:
+                    if cnt >= 1:
                         break
                     time.sleep(2)
                     i += 1
@@ -485,7 +485,7 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(sdfsfileid, 0)
                     cnt = self.get_ack_cache[sdfsfileid]
                     self.get_lock.release()
-                    if cnt > 1:
+                    if cnt >= 1:
                         break
                     time.sleep(2)
                     i += 1
@@ -524,7 +524,7 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(k, 0)
                     cnt = self.get_ack_cache[k]
                     self.get_lock.release()
-                    if cnt > 1:
+                    if cnt >= 1:
                         break
                     time.sleep(2)
                     i += 1
