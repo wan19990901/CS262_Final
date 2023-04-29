@@ -6,10 +6,10 @@ import os
 import time
 import struct
 import json
-
+import sys
 
 BUFFER_SIZE = 4096
-MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('localhost')
+MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('10.250.36.218')
 MACHINE_NUM = 99
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
@@ -163,8 +163,8 @@ class FServer(server.Node):
                 s.sendto(json.dumps({'command_type': 'fail_notice', 'command_content': fail_ip}).encode(), (self.master_ip, self.master_port))
 
 
-    def __init__(self, ping_port: int, membership_port: int, ping_timeout: int, ping_interval: int, log_filepath: str, file_port: int, master_port: int, master_host: str):
-        super().__init__(ping_port, membership_port, ping_timeout, ping_interval, log_filepath)
+    def __init__(self, ping_port: int, membership_port: int, ping_timeout: int, ping_interval: int, log_filepath: str, file_port: int, master_port: int, master_host: str,self_host: str):
+        super().__init__(ping_port, membership_port, ping_timeout, ping_interval, log_filepath, self_host)
         self.file_port = file_port
         self.file_cache = {}
         self.file_lock = threading.Lock()
@@ -592,5 +592,6 @@ class FServer(server.Node):
 if __name__ == '__main__':
     # def __init__(self, ping_port: int, membership_port: int, ping_timeout: int, ping_interval: int, log_filepath: str,
     #              file_port: int):
-    server = FServer(PING_PORT, MEMBERSHIP_PORT, PING_TIMEOUT, PING_INTERVAL, LOG_FILEPATH, FILE_PORT, MASTER_PORT, MASTER_HOST)
+    ip = sys.argv[1]
+    server = FServer(PING_PORT, MEMBERSHIP_PORT, PING_TIMEOUT, PING_INTERVAL, LOG_FILEPATH, FILE_PORT, MASTER_PORT, MASTER_HOST,ip)
     server.run()

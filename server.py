@@ -2,7 +2,7 @@ import socket
 import threading
 import time
 import json
-
+import sys
 # from macpath import join
 
 # configuration
@@ -33,7 +33,7 @@ def decode_ping_ack(msg):
     return decoded['id'], decoded['type']
 
 class Node:
-    def __init__(self, ping_port: int, membership_port: int, ping_timeout: int, ping_interval: int, log_filepath: str):
+    def __init__(self, ping_port: int, membership_port: int, ping_timeout: int, ping_interval: int, log_filepath: str, host_ip = 'localhost'):
         self.commands = set()  # taking record of the command_id of the commands that's been executed
         self.command_count = 1  # used for generating command_id
 
@@ -41,7 +41,7 @@ class Node:
 
         self.log_filepath = log_filepath
         # addresses
-        self.host = socket.gethostbyname(hostname)
+        self.host = socket.gethostbyname(host_ip)
 
         self.ping_port = ping_port
         self.membership_port = membership_port
@@ -404,5 +404,6 @@ class Node:
         self.log_lock.release()
 
 if __name__ == '__main__':
+    
     server = Node(PING_PORT, MEMBERSHIP_PORT, PING_TIMEOUT, PING_INTERVAL, LOG_FILEPATH)
     server.run()
