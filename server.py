@@ -6,7 +6,7 @@ import sys
 # from macpath import join
 
 # configuration
-hostname = '10.250.36.218'
+hostname = '100.64.6.75'
 INTRODUCER_HOST = socket.gethostbyname(hostname)
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
@@ -383,6 +383,7 @@ class Node:
                 self.bytes = 0
                 self.start_time = time.time()
                 self.bytes_lock.release()
+        
 
     def log_generate(self, node_id: str, action: str, membership_list: list):
         """
