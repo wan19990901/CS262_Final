@@ -6,7 +6,7 @@ import sys
 # from macpath import join
 
 # configuration
-hostname = '100.64.6.75'
+hostname = '100.90.190.124'
 INTRODUCER_HOST = socket.gethostbyname(hostname)
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
