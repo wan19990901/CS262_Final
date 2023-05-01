@@ -7,7 +7,7 @@ import time
 MASTER_PORT = 20086
 FILE_PORT = 10086
 GET_ADDR_PORT = 10087
-Master_ip = '192.168.210.100'
+Master_ip = '172.31.3.19'
 
 
 class FMaster:
