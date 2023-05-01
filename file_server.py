@@ -10,7 +10,7 @@ import re
 
 BUFFER_SIZE = 4096
 MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('18.118.210.144')
-MACHINE_NUM = int(re.search(r'0*([1-9])', socket.gethostname()).group(1))
+MACHINE_NUM = int(socket.gethostname().split('-')[-1])
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
@@ -577,8 +577,6 @@ class FServer(server.Node):
                 print('Leaving...')
                 break
                 # sys.exit()
-
-
             elif command == 'list_mem':
                 print('isIntroducer: ', self.isIntroducer)
                 self.membership_lock.acquire()

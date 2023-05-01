@@ -8,7 +8,7 @@ import re
 
 # configuration
 INTRODUCER_HOST = socket.gethostbyname('ec2-18-118-210-144.us-east-2.compute.amazonaws.com')
-MACHINE_NUM = int(re.search(r'0*([1-9])', socket.gethostname()).group(1))
+MACHINE_NUM = int(socket.gethostname().split('-')[-1])
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
 MEMBERSHIP_PORT = 20241
