@@ -10,7 +10,7 @@ import sys
 import random
 
 BUFFER_SIZE = 4096
-MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('172.31.3.19')
+MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('18.118.210.144')
 MACHINE_NUM = int(sys.argv[1][-1].split('.')[-1])
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
