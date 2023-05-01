@@ -7,7 +7,7 @@ import re
 # from macpath import join
 
 # configuration
-INTRODUCER_HOST = socket.gethostbyname('academic-login08.rc.fas.harvard.edu')
+INTRODUCER_HOST = socket.gethostbyname('ec2-18-118-210-144.us-east-2.compute.amazonaws.com')
 MACHINE_NUM = int(re.search(r'0*([1-9])', socket.gethostname()).group(1))
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
