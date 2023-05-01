@@ -9,7 +9,7 @@ import json
 import re
 
 BUFFER_SIZE = 4096
-MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('ec2-18-118-210-144.us-east-2.compute.amazonaws.com')
+MASTER_HOST = INTRODUCER_HOST = socket.gethostbyname('18.118.210.144')
 MACHINE_NUM = int(re.search(r'0*([1-9])', socket.gethostname()).group(1))
 LOG_FILEPATH = f'machine.{MACHINE_NUM}.log'
 PING_PORT = 20240
@@ -353,8 +353,12 @@ class FServer(server.Node):
         sdfsfileid = conn.recv(BUFFER_SIZE).decode()
         self.file_table.delete_file(sdfsfileid)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(json.dumps({'command_type': 'delete_notice', 'command_content': [sdfsfileid, socket.gethostbyname(socket.gethostname())]}).encode(),
-                     (self.master_ip, self.master_port))
+            try:
+                s.sendto(json.dumps({'command_type': 'delete_notice', 'command_content': [sdfsfileid, socket.gethostbyname(socket.gethostname())]}).encode(),
+                        (self.master_ip, self.master_port))
+            except:
+                s.sendto(json.dumps({'command_type': 'delete_notice', 'command_content': [sdfsfileid, socket.gethostbyname('192.168.210.100')]}).encode(),
+                        (self.master_ip, self.master_port))
         return
 
     def handle_ls(self, sdfsfileid, ip):
@@ -442,7 +446,11 @@ class FServer(server.Node):
             parsed_command = command.split()
             start_time = time.time()
             if parsed_command[0] == 'put':
-                localfilepath, sdfsfileid = parsed_command[1], parsed_command[2]
+                try:
+                    localfilepath, sdfsfileid = parsed_command[1], parsed_command[2]
+                except IndexError:
+                    print("Error: Invalid command. Please provide a valid command.")
+                    continue
                 ips = self.get_ip(sdfsfileid)
                 if not ips:
                     index = self.filehash(sdfsfileid)
@@ -458,13 +466,19 @@ class FServer(server.Node):
                     self.put_ack_cache.setdefault(command_id, 0)
                     cnt = self.put_ack_cache[command_id]
                     self.put_lock.release()
-                    if cnt >= 3:
+                    if cnt > 0:
+                        print(f"Received {cnt} acknowledgment(s) for file {sdfsfileid}")
+                    if cnt >= 1:
                         break
                     time.sleep(2)
                     i += 1
                 print('put complete.')
             elif parsed_command[0] == 'get':
-                sdfsfileid, localfilepath = parsed_command[1], parsed_command[2]
+                try:
+                    sdfsfileid, localfilepath = parsed_command[1], parsed_command[2]
+                except IndexError:
+                    print("Error: Invalid command. Please provide a valid command.")
+                    continue
                 ips = self.get_ip(sdfsfileid)
                 print(len(ips))
                 for ip in ips:
@@ -477,7 +491,7 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(sdfsfileid, 0)
                     cnt = self.get_ack_cache[sdfsfileid]
                     self.get_lock.release()
-                    if cnt >= 3:
+                    if cnt >= 1:
                         break
                     time.sleep(2)
                     i += 1
@@ -491,7 +505,11 @@ class FServer(server.Node):
                         f.write(data)
                     print('get complete.')
             elif parsed_command[0] == 'delete':
-                sdfsfileid = parsed_command[1]
+                try:
+                    sdfsfileid = parsed_command[1]
+                except IndexError:
+                    print("Error: Invalid command. Please provide a valid command.")
+                    continue
                 ips = self.get_ip(sdfsfileid)
                 for ip in ips:
                     t = threading.Thread(target=self.handle_delete, args=(sdfsfileid, ip))
@@ -499,13 +517,21 @@ class FServer(server.Node):
             elif parsed_command[0] == 'store':
                 self.file_table.show_file()
             elif parsed_command[0] == 'ls':
-                sdfsfileid = parsed_command[1]
-                ips = self.get_ip(sdfsfileid)
-                print('the file exists in:')
-                for ip in ips:
-                    print(' ', ip)
+                try:
+                    sdfsfileid = parsed_command[1]
+                    ips = self.get_ip(sdfsfileid)
+                    print('the file exists in:')
+                    for ip in ips:
+                        print(' ', ip)
+                except IndexError:
+                    print("Error: Invalid command. Please provide a valid command.")
+                    continue
             elif parsed_command[0] == 'get_versions':
-                sdfsfileid, num_versions, localfilepath = parsed_command[1], int(parsed_command[2]), parsed_command[3]
+                try:
+                    sdfsfileid, num_versions, localfilepath = parsed_command[1], int(parsed_command[2]), parsed_command[3]
+                except IndexError:
+                    print("Error: Invalid command. Please provide a valid command.")
+                    continue
                 ips = self.get_ip(sdfsfileid)
                 for ip in ips:
                     self.handle_multiple_get(sdfsfileid, ip, num_versions)
@@ -516,7 +542,7 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(k, 0)
                     cnt = self.get_ack_cache[k]
                     self.get_lock.release()
-                    if cnt >= 3:
+                    if cnt >= 1:
                         break
                     time.sleep(2)
                     i += 1
@@ -529,6 +555,8 @@ class FServer(server.Node):
                     with open(localfilepath, 'wb') as f:
                         f.write(data)
                     print('get complete.')
+
+
 
             elif command == 'leave':
                 # create command id
@@ -548,6 +576,7 @@ class FServer(server.Node):
                 self.log_generate(command_id[:-2], 'leave', self.membership_list)
                 print('Leaving...')
                 break
+                # sys.exit()
 
 
             elif command == 'list_mem':

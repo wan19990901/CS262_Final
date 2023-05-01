@@ -41,7 +41,10 @@ class Node:
 
         self.log_filepath = log_filepath
         # addresses
-        self.host = socket.gethostbyname(socket.gethostname())
+        try:
+            self.host = socket.gethostbyname(socket.gethostname())
+        except:
+            self.host = socket.gethostbyname('192.168.210.100')
 
         self.ping_port = ping_port
         self.membership_port = membership_port
