@@ -467,8 +467,8 @@ class FServer(server.Node):
                     cnt = self.put_ack_cache[command_id]
                     self.put_lock.release()
                     if cnt > 0:
-                        print(f"Received {cnt} acknowledgment(s) for file {sdfsfileid}")
-                    if cnt >= 1:
+                        print(f"Received {cnt} write acknowledgment(s) for file {sdfsfileid}")
+                    if cnt >= 2:
                         break
                     time.sleep(2)
                     i += 1
@@ -491,7 +491,9 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(sdfsfileid, 0)
                     cnt = self.get_ack_cache[sdfsfileid]
                     self.get_lock.release()
-                    if cnt >= 1:
+                    if cnt > 0:
+                        print(f"Received {cnt} read acknowledgment(s) for file {sdfsfileid}")
+                    if cnt >= 2:
                         break
                     time.sleep(2)
                     i += 1
@@ -542,7 +544,9 @@ class FServer(server.Node):
                     self.get_ack_cache.setdefault(k, 0)
                     cnt = self.get_ack_cache[k]
                     self.get_lock.release()
-                    if cnt >= 1:
+                    if cnt > 0:
+                        print(f"Received {cnt} read acknowledgment(s) for file {sdfsfileid}")
+                    if cnt >= 2:
                         break
                     time.sleep(2)
                     i += 1
@@ -555,8 +559,6 @@ class FServer(server.Node):
                     with open(localfilepath, 'wb') as f:
                         f.write(data)
                     print('get complete.')
-
-
 
             elif command == 'leave':
                 # create command id

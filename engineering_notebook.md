@@ -47,32 +47,33 @@ With the above system, we will use the membership information to manage data sto
 # Distributed File System 
 
 ## Overview
-This  documents the design and implementation of a distributed file system (DFS) based on the code. The DFS is a versioned file system that adheres to the following requirements:
 
-1. Consistency levels with writes acknowledged by at least W replicas, and reads by at least R replicas.
+This documents the design and implementation of a distributed file system (DFS) based on the previous DMS. The DFS is a versioned file system that adheres to the following requirements:
+
+1. Consistency levels with writes acknowledged by at least W (2) replicas, and reads by at least R (2) replicas.
 2. Totally ordered updates for each file.
 3. Reads return the latest written (and acknowledged) value.
 4. A `get-versions` command that retrieves the specified number of versions for a given file.
-5. Assumes num-versions is no more than 5.
+5. Assumes num-versions is no more than 5 for simplicity
 6. Ensures proper handling of node failures and rejoins.
 
 ## System Design
-The system utilizes a membership protocol to maintain a list of participating nodes. It also uses a file server to store and manage files in the distributed file system.
+The system utilizes a previously implemented membership protocol to maintain a list of participating nodes. It also uses a file server to store and manage files in the distributed file system.
 
 ### Membership Protocol
-The membership protocol is responsible for maintaining a list of active nodes in the system. It employs a ping-ack mechanism to monitor the status of nodes and updates the membership list accordingly.
+The membership protocol is responsible for maintaining a list of active nodes in the system. It employs a ping-ack mechanism to monitor the status of nodes and updates the membership list accordingly ( see more details in the above section).
 
 ### File Server
-The file server manages file storage and retrieval, ensuring consistency and versioning requirements. It communicates with other nodes using socket connections and follows the consistency levels of W and R replicas. The implementation uses W=2 and R=2, ensuring (W+R) is the least value that satisfies the consistency requirement.
+The file server manages file storage and retrieval, ensuring consistency and versioning requirements. It communicates with other nodes using socket connections and follows the consistency levels of W and R replicas. The implementation uses W=2 and R=2, ensuring 2 ack is the least value that satisfies the consistency requirement.
 
 ## Code Walkthrough
-The provided code consists of a `FServer` class that serves as the main file server, managing both the membership protocol and the file system.
+The provided code (file_server.py) consists of a `FServer` class that serves as the main file server, managing both the membership protocol and the file system.
 
 ### Key Functions
-1. `handle_put`: Handles the put operation for a file, sending the file to other nodes and updating the file table. (L342-394)
-2. `handle_get`: Handles the get operation for a file, fetching the file from other nodes, and storing it in the local file cache. (L396-448)
-3. `handle_delete`: Handles the delete operation for a file, sending the delete request to other nodes and updating the file table. (L450-463)
-4. `handle_ls`: Handles the ls operation, updating the ls cache with the file information. (L465-482)
+1. `handle_put`: Handles the put operation for a file, sending the file to other nodes and updating the file table. (L284)
+2. `handle_get`: Handles the get operation for a file, fetching the file from other nodes, and storing it in the local file cache. (L306)
+3. `handle_delete`: Handles the delete operation for a file, sending the delete request to other nodes and updating the file table. (L341)
+4. `handle_ls`: Handles the ls operation, updating the ls cache with the file information. (L364)
 5. `handle_multiple_get`: Handles the get_versions command, fetching the specified number of versions for a given file. (L484-539)
 
 ### Key Data Structures
@@ -85,29 +86,51 @@ The provided code consists of a `FServer` class that serves as the main file ser
 ### Failure Handling
 The system ensures proper handling of node failures and rejoins. When a node fails and rejoins, it wipes all file blocks/replicas it is storing before rejoining. The system handles failure scenarios, such as a node failing before or after receiving the confirmation notice.
 
+Also, files are typically replicated across multiple nodes for fault tolerance and redundancy. When a node fails, the DFS will make sure that the files stored on the failed node are still available on other nodes in the network.
+
 ## Replication and Fault Tolerance in the Code
+
 1. Replication: When a file is added to the system, the system stores replicas of the file on different nodes. This is handled outside the FMaster.py file. When the FMaster receives a 'put_notice' (L80-90), it updates the node_to_file and file_to_node mappings with the new file and node information. This ensures that the FMaster is aware of the location of each file replica.
 
-2. Fault Tolerance: When a node fails, the FMaster re-replicates the files that were stored on the failed node (L31-60). This is done as follows:
+2. Failure detection: In the FServer class, the ping_thread() method is responsible for detecting failures. It sends "ping" messages to other nodes in the system and waits for an "ack" (acknowledgment) response. If a node fails to send an acknowledgment within the specified ping_timeout, the system considers the node to have failed. The list of failed nodes' IP addresses is collected in the fail_ip list.
 
-The FMaster receives a 'fail_notice' (L67-74) containing the IP addresses of the failed nodes.
+3. Recovery and fault tolerance: When a node is detected as failed, the FServer class sends a 'fail_notice' message to the FMaster class, containing the IP addresses of the failed nodes. The FMaster class then starts a new thread for each failed IP address and calls the repair() method.
 
-For each failed node, the FMaster calls the repair function (L31-60) in a new thread.
+The repair() method does the following:
 
-In the repair function, the FMaster removes the failed node from the node_to_file mapping and retrieves the list of files that were stored on the failed node (L12-22).
+a. Removes the failed node from the node_to_file and file_to_node dictionaries.
+b. Re-replicates the files that were stored on the failed node to other available nodes. This is done by calling the issue_repair() method, which sends a 'repair' command to another node.
 
-For each file in the list, the FMaster attempts to find another node that has a replica of the file (L27-41). If it finds such a node, it sends a 'repair' command to the node along with the necessary information (e.g., the file ID and the list of other nodes that stored the file). The node then re-replicates the file to other nodes, ensuring that the desired replication factor is maintained.
+The other node that receives the 'repair' command in the FServer class executes the handle_repair_request() method. This method is responsible for ensuring the file is still available in the system after the node failure. It first checks if the file is present on the receiving node. If the file is present, no further action is needed, as the file is already replicated and available in the system. However, if the file is not present on the receiving node, the handle_repair_request() method calls the handle_replicate() method to replicate the file to another available node in the network. This step ensures that the file remains available and fault-tolerant, even if the original node has failed. It will try this to the next 3 nodes in the membership list that is not part of the deleted ips.
 
 These mechanisms help to maintain fault tolerance in the distributed file system by ensuring that there are always multiple replicas of each file available on different nodes.
 
+In summary, the code handles failure detection through periodic pinging and waiting for acknowledgments, just like what we did in the distributed file system. It achieves recovery and fault tolerance by re-replicating files from failed nodes to other available nodes in the system.
+
 ## Conclusion
 The distributed file system implementation adheres to the requirements of consistency, versioning, and failure handling. It uses a membership protocol for maintaining active nodes and a file server for managing file storage and retrieval.
-
 
 # Additional Notes
 
 ## Scalibility and Computing Resources:
 We will be using the AWS EC2 machines. We will use 5 nodes VMs for the demo, but the code is expected to run on more than 5.
 
+## FMaster
+
+The FMaster class is responsible for managing the metadata of the distributed file system, handling node failures, and ensuring that files are properly replicated across the system. Here's a brief explanation of the methods and their roles in the system:
+
+1. __init__(self, master_port: int, file_port: int): Initializes an FMaster object with the specified master and file port numbers, sets up the required data structures, and acquires the host IP address.
+
+2. repair(self, ip): When a node failure is detected, this method is responsible for re-replicating the files that were stored on the failed node. It does this by iterating through the file IDs of the failed node, finding other nodes with the same file, and issuing a repair command to replicate the file to another available node.
+
+3. issue_repair(self, sdfsfileid, ip, ips): This method sends a repair request to the specified IP address for the file with the provided file ID. It connects to the file server of the target node and sends the 'repair' command along with the file ID and a list of IPs where the file is currently stored.
+
+4. background(self): This method runs the main background thread, which listens for incoming commands (fail_notice, put_notice, delete_notice) from other nodes. It processes these commands by either initiating the repair process for failed nodes, or updating the file-to-node and node-to-file mappings.
+
+5. get_addr_thread(self): This method runs a separate thread that listens for incoming connections requesting the IP addresses of the nodes storing a specific file. When a connection is received, it sends back a list of IPs where the requested file is stored.
+
+6. run(self): This method starts the FMaster service by running the main background thread and the address thread. It also provides a simple command-line interface for checking the state of the file-to-node and node-to-file mappings.
+
+By managing the metadata, handling node failures, and ensuring proper replication, the FMaster class provides a robust and fault-tolerant distributed file system together with the DFS and DMS code above.
 
 
