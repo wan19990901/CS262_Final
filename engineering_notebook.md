@@ -1,52 +1,48 @@
-Our Code consists of two part
+Our Code consists of two part, we will first discuss the Distributed Group Membership System, and then, we will expand the idea by Introducing the Distributed File System that is built upon the file system.
 
 # Distributed Group Membership System
 
-In this document, we will discuss the design choices and implementation of a distributed group membership system, focusing on the provided code(server.py) and its adherence to the requirements outlined in the prompt. 
+In this document, we will discuss the design choices and implementation of a distributed group membership system, focusing on the provided code(server.py).
 
 ## Design Choices
 
+We will adapt a Gossip protocol here.
 ### Node Representation and Initialization
 
-Each node in the distributed system is represented by a `Node` class (lines 16-30). The class constructor initializes various parameters, such as the ping port, membership port, and logging filepath, as well as several locks and internal data structures to manage state and ensure thread safety.
+Each node in the distributed system is represented by a `Node` class (lines 35). The class constructor initializes various parameters, such as the ping port (used for sending and receiving PING and ACK messages between the nodes in the distributed file system. PING messages are used to check the health of other nodes in the system, and the corresponding ACK messages are sent in response to acknowledge the receipt of PING messages), membership port (used for sending and receiving membership update messages between the nodes in the distributed file system. Membership updates are used to inform other nodes about changes in the membership list (e.g., adding or removing nodes).), and logging filepath (This is the file path where log information about the node is stored. The log information typically includes node activities like joining or leaving the system, as well as any errors or other relevant events), as well as several locks (preventing race conditions and ensuring the consistency of the data like membership_list, ack_cache, commands) and internal data structures (help maintain the system's state and allow efficient lookups and updates) to manage state and ensure thread safety.
 
-When a node starts, the `join` method (lines 175-203) is called to register it with the group. The method assigns a unique ID to the node based on its host address and current timestamp (line 179). If the node is an introducer (The Master Node), it initializes its membership list with itself. Otherwise, it contacts the introducer to obtain the current membership list (lines 193-200).
+When a node starts, the `join` method (lines 297) is called to register it with the group. The method assigns a unique ID to the node based on its host address and current timestamp (line 302). If the node is an introducer (The Master Node), it initializes its membership list with itself. Otherwise, it contacts the introducer to obtain the current membership list (311).
+Then, we will start three threads to handle different aspects of the node's operation:
 
+a. membership_thread: Handles membership-related tasks, such as updating the membership list.
+b. ping_disseminate_thread: Handles the dissemination of ping messages to other nodes.
+c. ping_ack_receive: Receives ping acknowledgments from other nodes.
 ### Membership Management
 
-The membership list at each node is maintained using the `membership_list` attribute of the `Node` class. The `update_membership_list` method (lines 143-160) is responsible for adding or removing a node from the membership list based on the provided action and member_id. This method also generates log entries for join and leave events.
+The membership list at each node is maintained using the `membership_list` attribute of the `Node` class. The `update_membership_list` method (lines 279) is responsible for adding or removing a node from the membership list based on the provided action and member_id. This method also generates log entries for join and leave events.
 
-### Failure Detection
+### Failure Detection and Fault Tolerance
 
-The provided code implements a gossip-style failure detection mechanism. The `ping_disseminate_thread` method (lines 58-104) periodically sends ping messages to a random subset of nodes. The `ping_ack_receive` method (lines 105-137) listens for ping and ack messages and handles them accordingly using the `handle_ping` (lines 31-43) and `handle_ack` methods (lines 44-49). 
+The code implements a gossip-style failure detection mechanism. The `ping_disseminate_thread` method (lines 157) periodically sends ping messages to a subset of random nodes in the `ping_thread` (lines 198). The `ping_ack_receive` method (lines 177) listens for ping and ack messages and handles them accordingly using the `handle_ping` (lines 250) and `handle_ack` methods (lines 267). 
 
-### Fault Tolerance
+There is only one group at any point of time. Since we’re implementing the
+crash/fail-stop model, when a machine rejoins, it must do so with an id that
+includes a timestamp - this distinguishes successive incarnations of the same
+machine (these are the ids held in the membership lists). Notice that the id also
+has to contain the IP address.
 
-The system attempts to ensure fault tolerance by allowing up to three simultaneous failures. While the code implements a gossip-style failure detection mechanism, it is not clear whether the ring backbone is used as described in the prompt. The implementation should ensure that the ring backbone is maintained and utilized for failure detection and membership list updates, especially in the case of multiple simultaneous failures.
-
-### Scalability
-
-Although the provided code should work with a small number of nodes (N > 5), it is essential to thoroughly test the system with larger numbers of machines to evaluate its scalability.
-
+A machine failure is reflected in at least one membership lists within 5
+seconds (assuming synchronized clocks) – this is called time-bounded completeness,
+A machine failure, join or leave must be reflected within 6 seconds at all membership lists,
+assuming small network latencies (check Bandwidth).
 ### Bandwidth Efficiency
 
-While the code attempts to minimize bandwidth usage by using UDP and a selected subset of nodes for pinging, it would be useful to track and log the bandwidth usage during runtime to ensure that the system remains bandwidth-efficient under various conditions. The `bandwidth` and `reset_time` commands (lines 245-252) can be used to monitor bandwidth usage.
+The code attempts to minimize bandwidth usage by using UDP and a selected subset of nodes for pinging (Lines 92,258). UDP is a connectionless protocol that doesn't guarantee the delivery of packets. It doesn't establish a connection before sending data and doesn't handle retransmissions or acknowledgments. This results in less overhead and lower bandwidth usage. Also, in a large distributed system, it would be inefficient for each node to communicate with every other node directly. Instead, the code selects a subset of nodes to send ping messages. This approach reduces the number of messages exchanged and the overall bandwidth usage.
 
-## Evaluation of the Provided Code
+We will use the `bandwidth` and `reset_time` commands (lines 245-252) can be used to monitor bandwidth usage.
 
-The provided code appears to implement most of the design choices and requirements outlined in the prompt. However, there are a few potential areas for improvement or clarification:
 
-1. Message Marshaling: The code does not explicitly demonstrate the marshaling of platform-dependent fields into a platform-independent format. It is crucial to ensure that messages are properly encoded and decoded between nodes with potentially different architectures.
-
-2. Ring Backbone: As mentioned earlier, it is not clear whether the ring backbone is used as described in the prompt. The implementation should ensure that the ring backbone is maintained and utilized for failure detection and membership list updates.
-
-3. Scalability: The provided code should be tested with larger numbers of machines to evaluate its scalability.
-
-4. Bandwidth Efficiency: Monitoring and logging the bandwidth usage during runtime would be useful to ensure that the system remains bandwidth-efficient under various conditions.
-
-In conclusion, the provided code is a solid starting point for implementing the distributed group membership system. By addressing the areas for improvement mentioned above and ensuring that the system.
-
-With the distributed membership system, we further build a distributed file system based on the existing code.
+With the above system, we will use the membership information to manage data storage, replication, and retrieval across nodes in the system. The membership system maintains a list of active nodes and their statuses, which helps the distributed file system make decisions about where and how to store and access data. The next step would be a distributed file system.
 
 # Distributed File System 
 
@@ -106,6 +102,12 @@ These mechanisms help to maintain fault tolerance in the distributed file system
 
 ## Conclusion
 The distributed file system implementation adheres to the requirements of consistency, versioning, and failure handling. It uses a membership protocol for maintaining active nodes and a file server for managing file storage and retrieval.
+
+
+# Additional Notes
+
+## Scalibility and Computing Resources:
+We will be using the AWS EC2 machines. We will use 5 nodes VMs for the demo, but the code is expected to run on more than 5.
 
 
 
