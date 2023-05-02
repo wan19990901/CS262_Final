@@ -6,7 +6,17 @@ In this document, we will discuss the design choices and implementation of a dis
 
 ## Design Choices
 
-We will adapt a Gossip protocol here.
+We will adapt a Gossip protocol here. In Gossip protocol, nodes in the network periodically exchange information with each other, usually by selecting a random or predetermined set of neighbors. The exchanged information can be any data, and here specifically for updates to the system state, new events, and failure detection. The protocol works in an asynchronous, decentralized manner and is resilient to node failures and network partitions
+
+Key characteristics of Gossip protocols include:
+
+1. Scalability: Gossip protocols can handle a large number of nodes, making them suitable for large-scale distributed systems.
+
+2. Fault-tolerance: The protocol can tolerate node failures, as information dissemination does not rely on a single centralized point of communication. Even if some nodes fail, the information will still spread throughout the network.
+
+3. Robustness: Gossip protocols are resistant to network partitions and can recover once the partitions are resolved. They can also adapt to changes in the network topology.
+
+4. Simplicity: The protocol is simple to understand and implement, as it does not require complex algorithms or data structures.
 ### Node Representation and Initialization
 
 Each node in the distributed system is represented by a `Node` class (lines 35). The class constructor initializes various parameters, such as the ping port (used for sending and receiving PING and ACK messages between the nodes in the distributed file system. PING messages are used to check the health of other nodes in the system, and the corresponding ACK messages are sent in response to acknowledge the receipt of PING messages), membership port (used for sending and receiving membership update messages between the nodes in the distributed file system. Membership updates are used to inform other nodes about changes in the membership list (e.g., adding or removing nodes).), and logging filepath (This is the file path where log information about the node is stored. The log information typically includes node activities like joining or leaving the system, as well as any errors or other relevant events), as well as several locks (preventing race conditions and ensuring the consistency of the data like membership_list, ack_cache, commands) and internal data structures (help maintain the system's state and allow efficient lookups and updates) to manage state and ensure thread safety.
