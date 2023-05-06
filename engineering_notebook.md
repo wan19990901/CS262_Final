@@ -1,4 +1,5 @@
 Author: Guangya Wan, Zongjun Liu
+
 # CS 262 Final Project Write-up Distributed File System
 
 ## Objective: 
@@ -7,19 +8,19 @@ Design and implement a simple distributed file system that is scalable and can t
 
 ## Goals:
 
-1. Build a simplified version of HDFS that runs on multiple machines.
+1. Build a simplified version of Hadoop Distributed File System that runs on multiple machines.
 
 2. Ensure data is quickly re-replicated after failures.
 
 3. Implement a flat file system with no concept of directories.
 
-4. Ensure SDFS is a versioned file system with mandatory requirements.
+4. Ensure distributed file system is a versioned file system with mandatory requirements.
 
 5. Handle all failure scenarios.
 
 6. Keep design simple and fast.
 
-## Learnings and Implementation Details:
+## Implementation plan:
 
 1. Scalability:
 
@@ -42,6 +43,7 @@ Implemented consistency levels using W (write) and R (read) replicas to ensure f
 5. Updates to a file are totally ordered.
 
 A read returns the latest written and acknowledged value.
+
 Implemented get-versions to retrieve the last num-versions of a file.
 
 6. Failure Handling:
@@ -63,9 +65,8 @@ Explored options for active/passive replication, read/query processing, caching,
 8. Testing and Logging:
 
 Created logs at each machine to record file operations.
-Recommended (but not required) writing unit tests for basic file operations.
 
-Overall,this project allowed us to explore whta we learned about distributed file systems and their design principles. We explored replication, sharding, failure handling, and consistency levels. Through the implementation of the distributed file system. Our Code consists of two part, we will first discuss the Distributed Group Membership System, and then, we will expand the idea by Introducing the Distributed File System that is built upon the membership system. We will also include a appendix at the end to discuss the experiments and the tests we have tried.
+Wrote unit tests for basic file operations.
 
 ## Summary: Distributed Group Membership System:
 
@@ -208,7 +209,7 @@ This code defines a distributed file server (FServer) that supports operations l
 
 'put': This command uploads a local file to the distributed file system.
 
-1: Extracts the local file path and SDFS file ID from the command.
+1: Extracts the local file path and file ID from the command.
 
 2: Obtains a list of IP addresses where the file will be stored.
 
@@ -218,7 +219,7 @@ This code defines a distributed file server (FServer) that supports operations l
 
 'get': This command downloads a file from the distributed file system to a local file path.
 
-1: Extracts the SDFS file ID and local file path from the command.
+1: Extracts the file ID and local file path from the command.
 
 2: Obtains a list of IP addresses where the file is stored.
 
@@ -228,7 +229,7 @@ This code defines a distributed file server (FServer) that supports operations l
 
 ‘delete’: This command deletes a file from the distributed file system.
 
-1: Extracts the SDFS file ID from the command.
+1: Extracts the file ID from the command.
 
 2: Obtains a list of IP addresses where the file is stored.
 
@@ -240,7 +241,7 @@ This code defines a distributed file server (FServer) that supports operations l
 
 ‘get_versions’: This command downloads multiple versions of a file from the distributed file system to a local file path.
 
-1: Extracts the SDFS file ID, number of versions, and local file path from the command.
+1: Extracts the file ID, number of versions, and local file path from the command.
 
 2: Obtains a list of IP addresses where the file is stored.
 
@@ -292,5 +293,27 @@ This test code defines a unit test class NodeTestCase that tests the functionali
 Due to time limit, we didn't have a chance to write test code for file sever, and we plan to finish that after the semester ends.
 
 ## What we learned
+
+After implementing the Distributed File System, we learned the following:
+
+Design and planning: The importance of thorough planning and designing a distributed file system to ensure scalability, fault tolerance, and efficient data storage.
+
+Consistency levels: The use of read and write consistency levels (W and R) to make writes and reads fast, while maintaining a balance to avoid conflicts and ensure data integrity.
+
+Versioning: Implementing a versioned file system that totally orders all updates to a given file and allows users to retrieve different versions of a file.
+
+Handling failures: The need to consider various failure scenarios and implement mechanisms to handle them, ensuring the system doesn't hang or lose data.
+
+Election and replication: Exploring different methods for electing a master server and implementing replication strategies, such as active or passive replication, to maintain data redundancy and fault tolerance.
+
+Performance optimization: Optimizing read and write operations by leveraging caching and efficient data storage techniques.
+
+Logging and debugging: The significance of maintaining logs for each machine and utilizing tools from previous assignments for debugging and testing.
+
+Testing and evaluation: The importance of conducting thorough testing, measuring performance metrics, and evaluating the system based on real-world scenarios.
+
+Documentation and reporting: The value of documenting design decisions, implementation details, and presenting performance measurements in a concise and informative report.
+
+Overall,this project allowed us to explore what we learned about distributed file systems and their design principles. We explored replication, sharding, failure handling, and consistency levels through the implementation of the distributed file system. 
 
 
